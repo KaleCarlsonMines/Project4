@@ -29,17 +29,12 @@ void terminate(int sig) {
 void sendmsg (char *user, char *target, char *msg) {
 	// TODO:
 	// Send a request to the server to send the message (msg) to the target user (target)
-	// by creating the message structure and writing it to server's FIFO
+	// by creating the message structure and writing it to server's FIFO	
 
-	char usr[50];
-	char tgt[50];
-	char mesg[200];
-
-	strcpy(usr, user);
-	strcpy(tgt, target);
-	strcpy(mesg, msg);	
-
-	struct message send = {usr, tgt, mesg};
+	struct message send;
+	strcpy(send.source, user);
+	strcpy(send.target, target);
+	strcpy(send.msg, msg);
 	
 	int server;
 	server = open("serverFIFO",O_WRONLY);
@@ -78,6 +73,7 @@ void* messageListener(void *arg) {
 	}
 
 	close(server);
+
 
 	pthread_exit((void*)0);
 }
@@ -153,7 +149,7 @@ int main(int argc, char **argv) {
 
 		char *tok;
 		char target[50]; 
-		char msg[200];
+		char msg[200] = "";
 
 		tok = strtok(NULL, " ");
 		if(tok == NULL){
