@@ -31,12 +31,22 @@ void sendmsg (char *user, char *target, char *msg) {
 	// Send a request to the server to send the message (msg) to the target user (target)
 	// by creating the message structure and writing it to server's FIFO
 
+	char usr[50];
+	char tgt[50];
+	char mesg[200];
 
+	strcpy(usr, user);
+	strcpy(tgt, target);
+	strcpy(mesg, msg);	
 
+	struct message send = {usr, tgt, mesg};
+	
+	int server;
+	server = open("serverFIFO",O_WRONLY);
 
+	write(server, &send, sizeof(send));
 
-
-
+	close(server);
 
 }
 
@@ -49,10 +59,25 @@ void* messageListener(void *arg) {
 	// Incoming message from [source]: [message]
 	// put an end of line at the end of the message
 
+	int server;
+	server = open(uName, O_RDONLY);
+	
+	struct message listen;
 
+	while (1) {
+		
+		size_t bytes = read(server, &listen, sizeof(listen));
+		
+		if(bytes > 0){
+			printf("Incoming message from %s: %s\n", listen.source, listen.msg);
+			continue;
+		} else if (bytes == 0){
+			continue;
+		}
 
+	}
 
-
+	close(server);
 
 	pthread_exit((void*)0);
 }
@@ -86,7 +111,9 @@ int main(int argc, char **argv) {
     // TODO:
     // create the message listener thread
 
-
+	pthread_t tid;
+	
+	pthread_create(&tid, NULL, messageListener, NULL);
 
 
 
@@ -124,14 +151,39 @@ int main(int argc, char **argv) {
 		// if no message is specified, you should print the followingA
  		// printf("sendmsg: you have to enter a message\n");
 
+		char *tok;
+		char target[50]; 
+		char msg[200];
 
+		tok = strtok(NULL, " ");
+		if(tok == NULL){
+			printf("sendmsg: you have to specify target user\n");
+			continue;
+		}else {
+			strcpy(target, tok);
+		}
 
+		tok = strtok(NULL, " ");
 
+		int first = 1;
 
+		if(tok == NULL){
+			printf("sendmsg: you have to enter a message\n");
+			continue;
+		} else {
+			while(tok != NULL){
 
+				if(!first){
+					strcat(msg, " ");
+				}
 
+				strcat(msg, tok);
+				first = 0;
+				tok = strtok(NULL, " ");
+			}
+		}
 
-
+		sendmsg(uName, target, msg);
 
 		continue;
 	}
@@ -197,3 +249,4 @@ int main(int argc, char **argv) {
     }
     return 0;
 }
+
